@@ -1,13 +1,23 @@
-use anchor_lang::{prelude::*, system_program};
+use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, Token2022},
 };
-use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
+use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 use crate::{
-    Collateral, Config, ANCHOR_DISCRIMINATOR, MAX_AGE, SEED_COLATERAL_ACCOUNT, SEED_CONFIG_ACCOUNT, SEED_MINT_ACCOUNT, SEED_SOL_ACCOUNT, SOL_USD_FEED_ID
+    deposit_sol,
+    mint_token,
+    Collateral,
+    Config,
+    ANCHOR_DISCRIMINATOR,
+    SEED_COLLATERAL_ACCOUNT,
+    SEED_CONFIG_ACCOUNT,
+    SEED_MINT_ACCOUNT,
+    SEED_SOL_ACCOUNT,
 };
+
+use super::{check_health_factor, sol_to_usd};
 
 #[derive(Accounts)]
 pub struct DepositAndMint<'info> {
@@ -37,7 +47,7 @@ pub struct DepositAndMint<'info> {
         init_if_needed,
         payer = depositor,
         space = Collateral::INIT_SPACE + ANCHOR_DISCRIMINATOR,
-        seeds = [SEED_COLATERAL_ACCOUNT, depositor.key().as_ref()],
+        seeds = [SEED_COLLATERAL_ACCOUNT, depositor.key().as_ref()],
         bump,
         // has_one = depositor
     )]
@@ -77,45 +87,31 @@ pub struct DepositAndMint<'info> {
 
 pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u64) -> Result<()> {
     // transfer from signer to sol collateral account
+    let acc = &ctx.accounts;
 
-    // system_program::transfer(
-    //     CpiContext::new(
-    //         ctx.accounts.system_program.to_account_info(),
-    //         system_program::Transfer {
-    //             from: ctx.accounts.depositor.to_account_info(),
-    //             to: ctx,
-    //         }
-    //     ),
-    //     deposit_amount
-    // );
+    deposit_sol(&acc.system_program , &acc.depositor, &acc.depositor_sol_account, deposit_amount)?;
 
+    check_health_factor(&acc.price_update, &acc.collateral, &acc.config)?;
+    
     // calculate how many stablecoin send to signer
-    let price_update = &mut ctx.accounts.price_update;
-
-    // get_price_no_older_than will fail if the price update is for a different price feed.
-    // See https://pyth.network/developers/price-feed-ids for all available IDs.
-    let feed_id: [u8; 32] = get_feed_id_from_hex(SOL_USD_FEED_ID)?;
-    let price = price_update.get_price_no_older_than(&Clock::get()?, MAX_AGE, &feed_id)?;
-    // Sample output:
-    // The price is (7160106530699 ± 5129162301) * 10^-8
-    msg!("The price is ({} ± {}) * 10^{}", price.price, price.conf, price.exponent);
+    let amount_to_mint = sol_to_usd(deposit_amount, &acc.price_update)?;
 
     // mint stablecoin to signer
+    mint_token(&acc.token_program, &acc.mint_account, &acc.depositor_token_account, amount_to_mint , acc.config.bump_mint_account)?;
 
-    // update accounts
+    // update collateral account
     let collateral = &mut ctx.accounts.collateral;
 
     if !collateral.is_initialized{
-        // CHECK this
         collateral.is_initialized = true;
         collateral.depositor = ctx.accounts.depositor.key();
         collateral.sol_account = ctx.accounts.depositor_sol_account.key();
         collateral.token_account = ctx.accounts.depositor_token_account.key();
-        // collateral.lamport_balance = ctx.accounts.depositor_sol_account.lamports();
-        // collateral.total_minted = // TODO: calculate how many mint
         collateral.bump = ctx.bumps.collateral;
         collateral.bump_sol_account = ctx.bumps.depositor_sol_account;
     }
+    collateral.lamport_balance = ctx.accounts.depositor_sol_account.lamports();
+    collateral.total_minted = amount_to_mint;
 
     Ok(())
 }

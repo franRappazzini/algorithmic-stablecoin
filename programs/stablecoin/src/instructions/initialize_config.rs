@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::Token2022, token_interface::Mint};
+use anchor_spl::token_interface::{Mint, Token2022};
 
 use crate::{
-    Collateral, Config, ANCHOR_DISCRIMINATOR, HEALTH_FACTOR, LIQUIDATION_BONUS,
-    LIQUIDATION_THREASHOLD, SEED_CONFIG_ACCOUNT, SEED_MINT_ACCOUNT,
+    Config, ANCHOR_DISCRIMINATOR, HEALTH_FACTOR, LIQUIDATION_BONUS, LIQUIDATION_THREASHOLD,
+    SEED_CONFIG_ACCOUNT, SEED_MINT_ACCOUNT,
 };
 
 #[derive(Accounts)]
@@ -38,7 +38,7 @@ pub struct InitializeConfig<'info> {
 
 pub fn process_initialize_config(ctx: Context<InitializeConfig>) -> Result<()> {
     ctx.accounts.config.set_inner(Config {
-        auhority: ctx.accounts.authority.key(),
+        authority: ctx.accounts.authority.key(),
         mint_account: ctx.accounts.mint_account.key(),
         liquidation_threshold: LIQUIDATION_THREASHOLD,
         liquidation_bonus: LIQUIDATION_BONUS,

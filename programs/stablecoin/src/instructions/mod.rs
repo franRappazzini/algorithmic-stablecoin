@@ -1,3 +1,7 @@
+pub mod deposit_and_mint;
 pub mod initialize_config;
+pub mod update_config;
 
+pub use deposit_and_mint::*;
 pub use initialize_config::*;
+pub use update_config::*;

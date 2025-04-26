@@ -17,7 +17,7 @@ use crate::{
     SEED_SOL_ACCOUNT,
 };
 
-use super::{check_health_factor, sol_to_usd};
+use super::check_health_factor;
 
 #[derive(Accounts)]
 pub struct DepositAndMint<'info> {
@@ -85,22 +85,23 @@ pub struct DepositAndMint<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u64) -> Result<()> {
-    // transfer from signer to sol collateral account
+// TODO: revisar check_health_factor y mint_token porque creo que puede mintear todo lo que quiere (testear)
+pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u64, mint_amount: u64) -> Result<()> {
     let acc = &ctx.accounts;
-
+    
+    // transfer from signer to sol depositor account
     deposit_sol(&acc.system_program , &acc.depositor, &acc.depositor_sol_account, deposit_amount)?;
-
+    
     check_health_factor(&acc.price_update, &acc.collateral, &acc.config)?;
     
-    // calculate how many stablecoin send to signer
-    let amount_to_mint = sol_to_usd(deposit_amount, &acc.price_update)?;
-
     // mint stablecoin to signer
-    mint_token(&acc.token_program, &acc.mint_account, &acc.depositor_token_account, amount_to_mint , acc.config.bump_mint_account)?;
+    mint_token(&acc.token_program, &acc.mint_account, &acc.depositor_token_account, mint_amount , acc.config.bump_mint_account)?;
 
     // update collateral account
     let collateral = &mut ctx.accounts.collateral;
+    
+    collateral.lamport_balance = ctx.accounts.depositor_sol_account.lamports();
+    collateral.total_minted = mint_amount;
 
     if !collateral.is_initialized{
         collateral.is_initialized = true;
@@ -110,8 +111,7 @@ pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u6
         collateral.bump = ctx.bumps.collateral;
         collateral.bump_sol_account = ctx.bumps.depositor_sol_account;
     }
-    collateral.lamport_balance = ctx.accounts.depositor_sol_account.lamports();
-    collateral.total_minted = amount_to_mint;
+
 
     Ok(())
 }

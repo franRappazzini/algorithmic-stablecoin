@@ -6,18 +6,17 @@ use anchor_spl::{
 use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 use crate::{
-    deposit_sol,
-    mint_token,
-    Collateral,
-    Config,
-    ANCHOR_DISCRIMINATOR,
-    SEED_COLLATERAL_ACCOUNT,
-    SEED_CONFIG_ACCOUNT,
-    SEED_MINT_ACCOUNT,
-    SEED_SOL_ACCOUNT,
+       check_health_factor,
+       Collateral,
+       Config,
+       ANCHOR_DISCRIMINATOR,
+       SEED_COLLATERAL_ACCOUNT,
+       SEED_CONFIG_ACCOUNT,
+       SEED_MINT_ACCOUNT,
+       SEED_SOL_ACCOUNT
 };
 
-use super::check_health_factor;
+use super::{deposit_sol, mint_token};
 
 #[derive(Accounts)]
 pub struct DepositAndMint<'info> {
@@ -72,7 +71,7 @@ pub struct DepositAndMint<'info> {
     #[account(
         mut,
         seeds = [SEED_MINT_ACCOUNT],
-        bump = config.bump_mint_account // [?]: check if it doesn't fail
+        bump // = config.bump_mint_account // [?]: check if it doesn't fail
     )]
     pub mint_account: InterfaceAccount<'info, Mint>,
  
@@ -87,17 +86,6 @@ pub struct DepositAndMint<'info> {
 
 // TODO: revisar check_health_factor y mint_token porque creo que puede mintear todo lo que quiere (testear)
 pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u64, mint_amount: u64) -> Result<()> {
-    let acc = &ctx.accounts;
-    
-    // transfer from signer to sol depositor account
-    deposit_sol(&acc.system_program , &acc.depositor, &acc.depositor_sol_account, deposit_amount)?;
-    
-    check_health_factor(&acc.price_update, &acc.collateral, &acc.config)?;
-    
-    // mint stablecoin to signer
-    mint_token(&acc.token_program, &acc.mint_account, &acc.depositor_token_account, mint_amount , acc.config.bump_mint_account)?;
-
-    // update collateral account
     let collateral = &mut ctx.accounts.collateral;
     
     collateral.lamport_balance = ctx.accounts.depositor_sol_account.lamports();
@@ -111,7 +99,12 @@ pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u6
         collateral.bump = ctx.bumps.collateral;
         collateral.bump_sol_account = ctx.bumps.depositor_sol_account;
     }
+    
+    let acc = &ctx.accounts;
+    
+    deposit_sol(&acc.system_program , &acc.depositor, &acc.depositor_sol_account, deposit_amount)?;
+    
+    check_health_factor(&acc.price_update, &acc.collateral, &acc.config)?;
 
-
-    Ok(())
+    mint_token(&acc.token_program, &acc.mint_account, &acc.depositor_token_account, mint_amount , acc.config.bump_mint_account)
 }

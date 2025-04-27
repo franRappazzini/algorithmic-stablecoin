@@ -38,4 +38,16 @@ pub mod stablecoin {
     ) -> Result<()> {
         process_deposit_and_mint(ctx, deposit_amount, mint_amount)
     }
+
+    pub fn redeem_and_burn(
+        ctx: Context<RedeemAndBurn>,
+        redeemable_amount: u64,
+        burn_amount: u64,
+    ) -> Result<()> {
+        process_redeem_and_burn(ctx, redeemable_amount, burn_amount)
+    }
+
+    pub fn liquidate(ctx: Context<Liquidate>, liquidate_amount: u64) -> Result<()> {
+        procees_liquidate(ctx, liquidate_amount)
+    }
 }

@@ -7,4 +7,7 @@ pub enum DappError {
 
     #[msg("Health factor is too low")]
     HealthFactorIsTooLow,
+
+    #[msg("Health factor is too big")]
+    HealthFactorIsTooBig,
 }

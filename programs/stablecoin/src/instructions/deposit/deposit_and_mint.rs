@@ -71,7 +71,7 @@ pub struct DepositAndMint<'info> {
     #[account(
         mut,
         seeds = [SEED_MINT_ACCOUNT],
-        bump // = config.bump_mint_account // [?]: check if it doesn't fail
+        bump 
     )]
     pub mint_account: InterfaceAccount<'info, Mint>,
  
@@ -84,7 +84,6 @@ pub struct DepositAndMint<'info> {
     pub system_program: Program<'info, System>,
 }
 
-// TODO: revisar check_health_factor y mint_token porque creo que puede mintear todo lo que quiere (testear)
 pub fn process_deposit_and_mint(ctx: Context<DepositAndMint>, deposit_amount: u64, mint_amount: u64) -> Result<()> {
     let collateral = &mut ctx.accounts.collateral;
     

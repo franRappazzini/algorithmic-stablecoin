@@ -30,11 +30,11 @@ pub fn redeem_sol<'info>(
     system_program: &Program<'info, System>,
     from: &SystemAccount<'info>,
     to: &Signer<'info>,
+    depositor: Pubkey,
     amount: u64,
     bump: u8,
 ) -> Result<()> {
-    let to_key = to.key();
-    let signer_seeds: &[&[&[u8]]] = &[&[SEED_SOL_ACCOUNT, to_key.as_ref(), &[bump]]]; // [?] check this
+    let signer_seeds: &[&[&[u8]]] = &[&[SEED_SOL_ACCOUNT, depositor.as_ref(), &[bump]]];
 
     system_program::transfer(
         CpiContext::new_with_signer(

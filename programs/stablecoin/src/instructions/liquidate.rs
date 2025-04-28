@@ -17,15 +17,14 @@ pub struct Liquidate<'info> {
     pub liquidator: Signer<'info>,
 
     #[account(
-        init_if_needed,
-        payer = liquidator,
+        mut,
         associated_token::mint = mint_account,
         associated_token::authority = liquidator,
         associated_token::token_program = token_program
     )]
     pub liquidator_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut)] // es pasado como account
+    #[account(mut)] // es "encontrado" por el constraint de collateral
     pub liquidator_sol_account: SystemAccount<'info>,
 
     #[account(
@@ -37,10 +36,11 @@ pub struct Liquidate<'info> {
     #[account(
         seeds = [SEED_CONFIG_ACCOUNT],
         bump = config.bump,
-        has_one= mint_account,
+        has_one = mint_account,
     )]
     pub config: Account<'info, Config>,
 
+    #[account(mut)] // es "encontrado" por el has_one de config
     pub mint_account: InterfaceAccount<'info, Mint>,
 
     pub price_update: Account<'info, PriceUpdateV2>,
@@ -75,6 +75,7 @@ pub fn procees_liquidate(ctx: Context<Liquidate>, liquidate_amount: u64) -> Resu
         &acc.system_program,
         &acc.liquidator_sol_account,
         &acc.liquidator,
+        acc.collateral.depositor,
         liquidable_lamports,
         acc.collateral.bump_sol_account,
     )?;

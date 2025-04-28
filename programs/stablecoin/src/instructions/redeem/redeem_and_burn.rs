@@ -82,6 +82,7 @@ pub fn process_redeem_and_burn(
         &acc.system_program,
         &acc.redeemer_sol_account,
         &acc.redeemer,
+        acc.redeemer.key(),
         redeemable_amount,
         acc.collateral.bump_sol_account,
     )

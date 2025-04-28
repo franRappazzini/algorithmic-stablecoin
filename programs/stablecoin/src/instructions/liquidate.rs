@@ -7,7 +7,6 @@ use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 use crate::{
     burn_token, redeem_sol, usd_to_lamports, Collateral, Config, DappError, SEED_CONFIG_ACCOUNT,
-    SEED_SOL_ACCOUNT,
 };
 
 use super::calculate_health_factor;

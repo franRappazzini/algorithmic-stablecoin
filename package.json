@@ -7,7 +7,9 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
     "@pythnetwork/hermes-client": "^2.0.0",
-    "@pythnetwork/pyth-solana-receiver": "^0.10.1"
+    "@pythnetwork/pyth-solana-receiver": "^0.10.1",
+    "@solana/web3.js": "^1.98.2",
+    "rpc-websockets": "^10.0.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

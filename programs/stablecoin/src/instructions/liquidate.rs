@@ -6,8 +6,8 @@ use anchor_spl::{
 use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 use crate::{
-    burn_token, redeem_sol, usd_to_lamports, Collateral, Config, DappError, ANCHOR_DISCRIMINATOR,
-    SEED_COLLATERAL_ACCOUNT, SEED_CONFIG_ACCOUNT, SEED_SOL_ACCOUNT,
+    burn_token, redeem_sol, usd_to_lamports, Collateral, Config, DappError, SEED_CONFIG_ACCOUNT,
+    SEED_SOL_ACCOUNT,
 };
 
 use super::calculate_health_factor;
@@ -26,19 +26,12 @@ pub struct Liquidate<'info> {
     )]
     pub liquidator_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(
-        mut,
-        seeds = [SEED_SOL_ACCOUNT, liquidator.key().as_ref()],
-        bump
-    )]
+    #[account(mut)] // es pasado como account
     pub liquidator_sol_account: SystemAccount<'info>,
 
     #[account(
-        init_if_needed,
-        payer = liquidator,
-        space = Collateral::INIT_SPACE + ANCHOR_DISCRIMINATOR,
-        seeds = [SEED_COLLATERAL_ACCOUNT, liquidator.key().as_ref()],
-        bump
+        mut, // es pasado como account
+        constraint = collateral.sol_account == liquidator_sol_account.key()
     )]
     pub collateral: Account<'info, Collateral>,
 

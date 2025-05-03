@@ -1,0 +1,16 @@
+{
+  "name": "Test Event",
+  "symbol": "TE",
+  "description": "This will be a nice event!",
+  "image": "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffamous_fox_federation_pfp_1679672949828.gif",
+  "attributes": [
+    {
+      "trait_type": "trait1",
+      "value": "value1"
+    },
+    {
+      "trait_type": "trait2",
+      "value": "value2"
+    }
+  ],
+}
